@@ -54,34 +54,36 @@ train_test_split_ratio = 0.7
 # !pip3 install seaborn
 
 
-# In[3]:
+# In[42]:
 
 
 completedata = pd.read_csv("./data/data.csv")
 completedata.head()
+completedata.loc[completedata.diagnosis == 'M', 'diagnosis'] = 1
+completedata.loc[completedata.diagnosis == 'B', 'diagnosis'] = 0
 
 
-# In[4]:
+# In[43]:
 
 
 train_Y = completedata.diagnosis
 train_X = completedata.drop(["id","Unnamed: 32","diagnosis"],axis=1)
 
 
-# In[5]:
+# In[44]:
 
 
 train_Y = np.array(train_Y)
 train_X = np.array(train_X)
 
 
-# In[6]:
+# In[45]:
 
 
 # train_X.iloc()
 
 
-# In[7]:
+# In[46]:
 
 
 print (train_X.shape)
@@ -89,19 +91,19 @@ print (train_X.shape)
 print (train_X[0:3,:])
 
 
-# In[10]:
+# In[47]:
 
 
 # train_X.head()
 
 
-# In[9]:
+# In[48]:
 
 
 train_Y.shape
 
 
-# In[12]:
+# In[49]:
 
 
 # mask = np.zeros_like(train_X.corr(), dtype=np.bool)
@@ -111,7 +113,7 @@ train_Y.shape
 # plt.show()
 
 
-# In[14]:
+# In[50]:
 
 
 # ax = sb.countplot(train_Y,label="Count")       # M = 212, B = 357
@@ -120,7 +122,7 @@ train_Y.shape
 # print('Number of Malignant : ',M)
 
 
-# In[25]:
+# In[51]:
 
 
 import rotation_forest
@@ -157,20 +159,20 @@ def reports(classifier,train_data,train_labels,train_test_split_ratio=.3):
     print ("")
 
 
-# In[26]:
+# In[52]:
 
 
 rotationforest = rotation_forest.RotationForestClassifier()
 
 
-# In[31]:
+# In[53]:
 
 
 from sklearn.decomposition import PCA
 pca = PCA(n_components=25)
 
 
-# In[32]:
+# In[54]:
 
 
 reports(rotationforest,pca.fit_transform(np.array(train_X)),np.array(train_Y),0.3)
@@ -188,14 +190,32 @@ reports(rotationforest,pca.fit_transform(np.array(train_X)),np.array(train_Y),0.
 # train_X[0:5]
 
 
-# In[79]:
+# In[55]:
 
 
 train_Y[0:5]
 
 
+# In[56]:
+
+
+from feature_selection_ga import FeatureSelectionGA
+
+
+# In[57]:
+
+
+ga = FeatureSelectionGA(rotationforest,train_X,train_Y)
+
+
+# In[61]:
+
+
+pop = ga.generate(150)
+
+
 # In[ ]:
 
 
-
+ga.eva
 
