@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
+# In[113]:
 
 
 from PIL import Image
@@ -26,6 +26,7 @@ import warnings
 from sklearn.model_selection import KFold
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.svm import SVC,LinearSVC
+from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB, GaussianNB
 from sklearn.neural_network import MLPClassifier
 from sklearn.metrics import accuracy_score
@@ -45,16 +46,51 @@ import seaborn as sb
 # from skimage.feature import hog,local_binary_pattern
 from sklearn.model_selection import train_test_split
 # from skimage import data, exposure
-train_test_split_ratio = 0.7
+# train_test_split_ratio = 0.7
 
 
 # In[2]:
 
 
+from feature_selection_ga import FeatureSelectionGA
+
+
+# In[3]:
+
+
 # !pip3 install seaborn
 
 
-# In[42]:
+# # Dataset 2 Read
+
+# In[4]:
+
+
+data2 = np.genfromtxt("./data/breast-cancer-wisconsin.data",delimiter=",")
+
+
+# In[5]:
+
+
+train_data2 = data2.T[1:].T
+train_X2 = train_data2.T[0:-1].T.astype(float)
+train_Y2 = train_data2.T[-1].T
+for i in range(len(train_Y2)):
+    if(train_Y2[i] == 2):
+        train_Y2[i] = 1
+    else:
+        train_Y2[i] = 0
+# print (train_Y2)
+# print len(train_X2)
+# print len(train_X2[0])
+train_X2 = np.array(train_X2)
+train_Y2 = np.array(train_Y2)
+train_X2,train_Y2 = shuffle(train_X2,train_Y2)
+
+
+# # Dataset 1 read
+
+# In[6]:
 
 
 completedata = pd.read_csv("./data/data.csv")
@@ -63,47 +99,48 @@ completedata.loc[completedata.diagnosis == 'M', 'diagnosis'] = 1
 completedata.loc[completedata.diagnosis == 'B', 'diagnosis'] = 0
 
 
-# In[43]:
+# In[7]:
 
 
 train_Y = completedata.diagnosis
 train_X = completedata.drop(["id","Unnamed: 32","diagnosis"],axis=1)
 
 
-# In[44]:
+# In[8]:
 
 
 train_Y = np.array(train_Y)
 train_X = np.array(train_X)
+train_X,train_Y = shuffle(train_X,train_Y)
 
 
-# In[45]:
+# In[9]:
 
 
 # train_X.iloc()
 
 
-# In[46]:
+# In[10]:
 
 
-print (train_X.shape)
-# print (completedata.shape)
-print (train_X[0:3,:])
+# print (train_X.shape)
+# # print (completedata.shape)
+# print (train_X[0:3,:])
 
 
-# In[47]:
+# In[11]:
 
 
 # train_X.head()
 
 
-# In[48]:
+# In[12]:
 
 
 train_Y.shape
 
 
-# In[49]:
+# In[13]:
 
 
 # mask = np.zeros_like(train_X.corr(), dtype=np.bool)
@@ -113,7 +150,7 @@ train_Y.shape
 # plt.show()
 
 
-# In[50]:
+# In[14]:
 
 
 # ax = sb.countplot(train_Y,label="Count")       # M = 212, B = 357
@@ -122,72 +159,56 @@ train_Y.shape
 # print('Number of Malignant : ',M)
 
 
-# In[51]:
+# # Dataset read complete
+
+# In[43]:
 
 
 import rotation_forest
-def reports(classifier,train_data,train_labels,train_test_split_ratio=.3):
-    kf = KFold(n_splits=5)
-    kf.get_n_splits(train_data)
+def reports(classifier,train_data,train_labels,train_test_split_ratio=.2):
+    scores = []
+    X_train, X_test, y_train, y_test = train_test_split(train_data, train_labels,shuffle=False, test_size=train_test_split_ratio)
+    kf = KFold(n_splits=5,shuffle=False)
+    kf.get_n_splits(X_train)
     print(kf)
     scores = []
-    for train_index, test_index in kf.split(train_data):
+    for train_index, test_index in kf.split(X_train):
         #print("TRAIN:", len(train_index), "TEST:", len(test_index))
-        X_train, X_test = train_data[train_index], train_data[test_index]
-        y_train, y_test = train_labels[train_index], train_labels[test_index]
-        classifier.fit(X_train,y_train)
-        predicted = classifier.predict(X_test)
-        scores.append(accuracy_score(predicted,y_test))
+        X_traini, X_testi = X_train[train_index], X_train[test_index]
+        y_traini, y_testi = y_train[train_index], y_train[test_index]
+        classifier.fit(X_traini,y_traini)
+        predicted = classifier.predict(X_testi)
+        scores.append(accuracy_score(predicted,y_testi))
     scores = np.array(scores)
     print ("Average Accuracy K Fold: ",scores.mean())
-    train_data_len = len(train_data)
-    chunksize = int(train_data_len*train_test_split_ratio)
     
-    train_x = train_data[0:chunksize]
-    train_y = train_labels[0:chunksize]
-
-    test_x = train_data[chunksize:train_data_len]
-    test_y = train_labels[chunksize:train_data_len]
-    
-    classifier.fit(train_x,train_y)
-    predicted = classifier.predict(test_x)
+    classifier.fit(X_train,y_train)
+    predicted = classifier.predict(X_test)
     print ("Test Data Results:")
-    print ("Test Accuracy: ",accuracy_score(predicted,test_y))
-    X = classification_report(test_y,predicted)
+    print ("Test Accuracy: ",accuracy_score(predicted,y_test))
+    X = classification_report(y_test,predicted)
     print (X)
-    print ("MCC: ",mcc(test_y,predicted))
-    print ("")
+#     print ("MCC: ",mcc(test_y,predicted))
+#     print ("")
 
 
-# In[52]:
+# In[66]:
 
 
-rotationforest = rotation_forest.RotationForestClassifier()
 
 
-# In[53]:
+
+# In[17]:
 
 
 from sklearn.decomposition import PCA
 pca = PCA(n_components=25)
 
 
-# In[54]:
+# In[19]:
 
 
-reports(rotationforest,pca.fit_transform(np.array(train_X)),np.array(train_Y),0.3)
-
-
-# In[33]:
-
-
-# np.array(train_Y)
-
-
-# In[34]:
-
-
-# train_X[0:5]
+reports(rotationforest,np.array(train_X),np.array(train_Y),0.2)
 
 
 # In[55]:
@@ -196,26 +217,154 @@ reports(rotationforest,pca.fit_transform(np.array(train_X)),np.array(train_Y),0.
 train_Y[0:5]
 
 
-# In[56]:
+# In[175]:
 
 
-from feature_selection_ga import FeatureSelectionGA
-
-
-# In[57]:
-
-
-ga = FeatureSelectionGA(rotationforest,train_X,train_Y)
-
-
-# In[61]:
-
-
-pop = ga.generate(150)
+ga = FeatureSelectionGA(rotationforest,train_X,train_Y,cv_split=10)
+pop = ga.generate(100)
 
 
 # In[ ]:
 
 
-ga.eva
+
+
+
+# In[174]:
+
+
+print (pop)
+
+
+# In[112]:
+
+
+# print data2[0]
+
+
+# In[125]:
+
+
+# train_data2 = data2.T[1:].T
+# train_X2 = []
+# train_Y2 = []
+
+# for i in range(len(train_data2)):
+#     if(np.nan not in train_data2[i]):
+#         train_X2.append(train_data2[i][0:-1])
+#         if(train_data2[i][-1] == 2):
+#             train_Y2.append(1)
+#         else:
+#             train_Y2.append(0)
+
+# # train_Y2 = train_data2.T[-1].T
+# # for i in range(len(train_Y2)):
+# #     if(train_Y2[i] == 2):
+# #         train_Y2[i] = 1
+# #     else:
+# #         train_Y2[i] = 0
+# print (train_Y2)
+# print len(train_X2)
+# # print len(train_X2[0])
+
+
+# In[164]:
+
+
+ga = FeatureSelectionGA(rotationforest,train_X2,train_Y2,cv_split=10)
+pop = ga.generate(50,mutxpb=0.4,ngen=6,cxpb=0.6)
+
+
+# In[129]:
+
+
+rotationforest.fit(train_X2,train_Y2)
+
+
+# In[130]:
+
+
+y = rotationforest.predict(train_X2)
+
+
+# In[132]:
+
+
+accuracy_score(y_pred=y,y_true=train_Y2)
+
+
+# In[168]:
+
+
+rotationforest = rotation_forest.RotationForestClassifier(random_state=False,max_depth=4,n_estimators=10)
+reports(rotationforest,train_X,train_Y,0.2)
+
+
+# In[107]:
+
+
+rotationforest = rotation_forest.RotationForestClassifier(random_state=False,max_depth=4,n_estimators=10)
+reports(rotationforest,train_X2,train_Y2,0.2)
+
+
+# In[23]:
+
+
+print len(train_X2)
+
+
+# In[121]:
+
+
+logistic = LogisticRegression(random_state=0, solver='lbfgs',multi_class='multinomial')
+reports(logistic,train_X2,train_Y2,0.2)
+
+
+# In[144]:
+
+
+from sklearn.tree import DecisionTreeClassifier
+decisiontree = DecisionTreeClassifier(random_state=0,max_depth=4)
+reports(decisiontree,train_X2,train_Y2,0.2)
+
+
+# In[136]:
+
+
+ann = MLPClassifier(solver='lbfgs', alpha=1e-5,hidden_layer_sizes=(5, 2), random_state=1)
+reports(ann,train_X2,train_Y2,0.2)
+
+
+# In[136]:
+
+
+rbfn
+reports(rbfn,train_X2,train_Y2,0.2)
+
+
+# In[129]:
+
+
+randomforest = RandomForestClassifier(n_estimators=10, max_depth=4,random_state=0)
+reports(randomforest,train_X2,train_Y2,0.2)
+
+
+# In[150]:
+
+
+gausian = GaussianNB()
+reports(gausian,train_X2,train_Y2,0.2)
+
+
+# In[143]:
+
+
+svm = SVC(gamma='auto',kernel='poly')
+reports(svm,train_X2,train_Y2,0.2)
+
+
+# In[ ]:
+
+
+
 
