@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[113]:
+# In[2]:
 
 
 from PIL import Image
@@ -49,13 +49,21 @@ from sklearn.model_selection import train_test_split
 # train_test_split_ratio = 0.7
 
 
-# In[2]:
+# In[19]:
 
 
 from feature_selection_ga import FeatureSelectionGA
+rotationforest = rotation_forest.RotationForestClassifier(random_state=False,max_depth=4,n_estimators=10)
 
 
-# In[3]:
+# In[21]:
+
+
+#train_X, train_Y => diagnostic dataset 1 => 30 features genetic algorithm use
+#train_X2, train_Y2 => original dataset 2 => 10 features
+
+
+# In[4]:
 
 
 # !pip3 install seaborn
@@ -63,13 +71,13 @@ from feature_selection_ga import FeatureSelectionGA
 
 # # Dataset 2 Read
 
-# In[4]:
+# In[5]:
 
 
 data2 = np.genfromtxt("./data/breast-cancer-wisconsin.data",delimiter=",")
 
 
-# In[5]:
+# In[6]:
 
 
 train_data2 = data2.T[1:].T
@@ -90,7 +98,7 @@ train_X2,train_Y2 = shuffle(train_X2,train_Y2)
 
 # # Dataset 1 read
 
-# In[6]:
+# In[22]:
 
 
 completedata = pd.read_csv("./data/data.csv")
@@ -99,28 +107,44 @@ completedata.loc[completedata.diagnosis == 'M', 'diagnosis'] = 1
 completedata.loc[completedata.diagnosis == 'B', 'diagnosis'] = 0
 
 
-# In[7]:
+# In[23]:
 
 
+print completedata.keys()
+
+
+# In[24]:
+
+
+train_XGA = completedata[["radius_se","texture_mean","perimeter_mean","perimeter_se","area_se","smoothness_se","compactness_worst","concavity_mean","concavity_worst","concave points_se","concave points_worst","symmetry_mean","symmetry_worst","fractal_dimension_mean"]]
+train_YGA = completedata.diagnosis
 train_Y = completedata.diagnosis
 train_X = completedata.drop(["id","Unnamed: 32","diagnosis"],axis=1)
 
 
-# In[8]:
+# In[25]:
+
+
+train_XGA.head()
+
+
+# In[27]:
 
 
 train_Y = np.array(train_Y)
 train_X = np.array(train_X)
-train_X,train_Y = shuffle(train_X,train_Y)
+train_YGA = np.array(train_YGA)
+train_XGA = np.array(train_XGA)
+train_X,train_Y,train_XGA,train_YGA = shuffle(train_X,train_Y,train_XGA,train_YGA)
 
 
-# In[9]:
+# In[10]:
 
 
 # train_X.iloc()
 
 
-# In[10]:
+# In[11]:
 
 
 # print (train_X.shape)
@@ -128,19 +152,19 @@ train_X,train_Y = shuffle(train_X,train_Y)
 # print (train_X[0:3,:])
 
 
-# In[11]:
+# In[12]:
 
 
 # train_X.head()
 
 
-# In[12]:
+# In[13]:
 
 
 train_Y.shape
 
 
-# In[13]:
+# In[14]:
 
 
 # mask = np.zeros_like(train_X.corr(), dtype=np.bool)
@@ -150,7 +174,7 @@ train_Y.shape
 # plt.show()
 
 
-# In[14]:
+# In[15]:
 
 
 # ax = sb.countplot(train_Y,label="Count")       # M = 212, B = 357
@@ -161,7 +185,7 @@ train_Y.shape
 
 # # Dataset read complete
 
-# In[43]:
+# In[16]:
 
 
 import rotation_forest
@@ -192,7 +216,7 @@ def reports(classifier,train_data,train_labels,train_test_split_ratio=.2):
 #     print ("")
 
 
-# In[66]:
+# In[ ]:
 
 
 
@@ -205,10 +229,10 @@ from sklearn.decomposition import PCA
 pca = PCA(n_components=25)
 
 
-# In[19]:
+# In[28]:
 
 
-reports(rotationforest,np.array(train_X),np.array(train_Y),0.2)
+reports(rotationforest,train_XGA,train_YGA,0.2)
 
 
 # In[55]:
@@ -230,10 +254,10 @@ pop = ga.generate(100)
 
 
 
-# In[174]:
+# In[1]:
 
 
-print (pop)
+# print (pop)
 
 
 # In[112]:
@@ -296,7 +320,6 @@ accuracy_score(y_pred=y,y_true=train_Y2)
 # In[168]:
 
 
-rotationforest = rotation_forest.RotationForestClassifier(random_state=False,max_depth=4,n_estimators=10)
 reports(rotationforest,train_X,train_Y,0.2)
 
 
